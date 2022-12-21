@@ -4,6 +4,8 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from subprocess import Popen
 import json
 from dataclasses import dataclass, asdict
+import uuid
+import tempfile
 
 builds = dict()
 
@@ -17,14 +19,11 @@ class Build:
     def __init__(self, repo):
         self.repo = repo 
         self.__process = Popen('echo "start process $$"; sleep 20; echo "end process $$"', shell=True)
+        self.id = str(uuid.uuid4())
 
     @property
     def running(self):
         return self.__process.poll() == None
-
-    @property
-    def id(self):
-        return str(self.__process.pid)
 
     @property
     def json(self):
@@ -53,7 +52,7 @@ class BuildyServer(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-type", "application/json")
         self.end_headers()
-        build = Build(Repository("", "", "")) 
+        build = Build(Repository(build_setup.get("url"), build_setup.get("banch"), build_setup.get("tag"))) 
         builds[build.id] = build
         self.wfile.write(bytes(json.dumps({"id": build.id}), "utf-8"))
 
@@ -79,6 +78,7 @@ class BuildyServer(BaseHTTPRequestHandler):
 
 hostName = "localhost"
 serverPort = 8080
+build_folder = tempfile.mkdtemp("buildy")
 
 if __name__ == "__main__":        
     webServer = HTTPServer((hostName, serverPort), BuildyServer)
