@@ -47,6 +47,8 @@ class BuildyServer(BaseHTTPRequestHandler):
             self._start_build(build_setup)
         else:
             self.send_response(404)
+            self.send_header("Content-type", "application/json")
+            self.end_headers()
 
     def _start_build(self, build_setup):
         self.send_response(200)
@@ -64,11 +66,15 @@ class BuildyServer(BaseHTTPRequestHandler):
             self._get_build(path[1])
         else:
             self.send_response(404)
+            self.send_header("Content-type", "application/json")
+            self.end_headers()
 
     def _get_build(self, id):
         build = builds.get(id)
         if(build == None):
             self.send_response(404)
+            self.send_header("Content-type", "application/json")
+            self.end_headers()
             return
         self.send_response(200)
         self.send_header("Content-type", "application/json")
