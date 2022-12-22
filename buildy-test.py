@@ -6,12 +6,12 @@ import os
 BUILDY_URL='http://localhost:9000'
 
 def mk_repo(name, sleep_interval):
-    return f"""mkdir -p temp/repos/{name} &&
-cd temp/repos/{name} &&
+    return f"""mkdir -p {os.getcwd()}/temp/repos/{name} &&
+cd {os.getcwd()}/temp/repos/{name} &&
 echo "all:\n\tsleep {sleep_interval}" > Makefile &&
 git init && git add --all && git commit -m"{name}" """
 
-prepare_tests = "rm -rf temp && " + mk_repo(10, 0.01) + " && " + mk_repo(100, 0.1) + " && " + mk_repo(1000, 1)
+prepare_tests = f"rm -rf {os.getcwd()}/temp && " + mk_repo(10, 0.01) + " && " + mk_repo(100, 0.1) + " && " + mk_repo(1000, 1)
 
 process = Popen(prepare_tests, shell=True)
 assert 0 == process.wait()
