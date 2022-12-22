@@ -6,6 +6,7 @@ import json
 from dataclasses import dataclass, asdict
 import uuid
 import tempfile
+from functools import partial
 
 builds = dict()
 
@@ -25,17 +26,24 @@ class Build:
     def running(self):
         return self.__process.poll() == None
 
+
     @property
-    def json(self):
-        return json.dumps(
-            {
+    def dict(self):
+        return {
                 "pid": self.id,
                 "running": self.running,
                 "repository": asdict(self.repo)
             }
-        )
 
-class BuildyServer(BaseHTTPRequestHandler):
+    @property
+    def json(self):
+        return json.dumps(self.dict)
+
+class BuildyHandler(BaseHTTPRequestHandler):
+    def __init__(self, dir, *args, **kwargs):
+        self.dir = dir
+        super().__init__(*args, **kwargs)
+
     def __split_path(self):
         return self.path[1:].split('/')
 
@@ -61,9 +69,23 @@ class BuildyServer(BaseHTTPRequestHandler):
     def do_GET(self):
         path = self.__split_path()
         if(path == ['']):
-            pass
+            self.send_response(200)
+            self.send_header("Content-type", "text/html")
+            self.end_headers()
+            self.wfile.write(bytes("""<html>
+            <head>
+            <title>Buildy</title>
+            </head>
+            <body><h1>Buildy</h1></body>
+            </html>""", "utf-8"))
         elif(path[0] == 'build'):
-            self._get_build(path[1])
+            if len(path) > 1:
+                self._get_build(path[1])
+            else:
+                self.send_response(200)
+                self.send_header("Content-type", "application/json")
+                self.end_headers()
+                self.wfile.write(bytes(json.dumps([b.dict for b in builds.values()]), "utf-8"))
         else:
             self.send_response(404)
             self.send_header("Content-type", "application/json")
@@ -87,12 +109,16 @@ serverPort = 9000
 build_folder = tempfile.mkdtemp("buildy")
 
 if __name__ == "__main__":        
-    webServer = HTTPServer((hostName, serverPort), BuildyServer)
+    from optparse import OptionParser
+
+    handler = partial(BuildyHandler, build_folder)
+    webServer = HTTPServer((hostName, serverPort), handler)
     print("Buildy server started http://%s:%s" % (hostName, serverPort))
 
     try:
         webServer.serve_forever()
     except KeyboardInterrupt:
         pass
-
-    webServer.server_close()
+    finally:
+        webServer.server_close()
+        print("Buildy server stopped")
