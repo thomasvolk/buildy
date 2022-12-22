@@ -8,8 +8,6 @@ import uuid
 import tempfile
 from functools import partial
 
-builds = dict()
-
 @dataclass
 class Repository:
     url: str
@@ -30,7 +28,7 @@ class Build:
     @property
     def dict(self):
         return {
-                "pid": self.id,
+                "id": self.id,
                 "running": self.running,
                 "repository": asdict(self.repo)
             }
@@ -40,8 +38,9 @@ class Build:
         return json.dumps(self.dict)
 
 class BuildyHandler(BaseHTTPRequestHandler):
-    def __init__(self, dir, *args, **kwargs):
+    def __init__(self, builds, dir, *args, **kwargs):
         self.dir = dir
+        self.builds = builds
         super().__init__(*args, **kwargs)
 
     def __split_path(self):
@@ -63,7 +62,7 @@ class BuildyHandler(BaseHTTPRequestHandler):
         self.send_header("Content-type", "application/json")
         self.end_headers()
         build = Build(Repository(build_setup.get("url"), build_setup.get("banch"), build_setup.get("tag"))) 
-        builds[build.id] = build
+        self.builds[build.id] = build
         self.wfile.write(bytes(json.dumps({"id": build.id}), "utf-8"))
 
     def do_GET(self):
@@ -85,14 +84,14 @@ class BuildyHandler(BaseHTTPRequestHandler):
                 self.send_response(200)
                 self.send_header("Content-type", "application/json")
                 self.end_headers()
-                self.wfile.write(bytes(json.dumps([b.dict for b in builds.values()]), "utf-8"))
+                self.wfile.write(bytes(json.dumps([b.dict for b in self.builds.values()]), "utf-8"))
         else:
             self.send_response(404)
             self.send_header("Content-type", "application/json")
             self.end_headers()
 
     def _get_build(self, id):
-        build = builds.get(id)
+        build = self.builds.get(id)
         if(build == None):
             self.send_response(404)
             self.send_header("Content-type", "application/json")
@@ -104,14 +103,15 @@ class BuildyHandler(BaseHTTPRequestHandler):
         self.wfile.write(bytes(build.json, "utf-8"))
 
 
-hostName = "localhost"
-serverPort = 9000
-build_folder = tempfile.mkdtemp("buildy")
-
 if __name__ == "__main__":        
     from optparse import OptionParser
 
-    handler = partial(BuildyHandler, build_folder)
+    hostName = "localhost"
+    serverPort = 9000
+    build_folder = tempfile.mkdtemp("buildy")
+    builds = dict()
+
+    handler = partial(BuildyHandler, builds, build_folder)
     webServer = HTTPServer((hostName, serverPort), handler)
     print("Buildy server started http://%s:%s" % (hostName, serverPort))
 

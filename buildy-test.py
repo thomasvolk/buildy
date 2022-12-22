@@ -23,13 +23,20 @@ assert 0 == process.wait()
 print("test data created")
 buildy_dir= f"{os.getcwd()}/temp/buildy"
 
-response = requests.post(f"{BUILDY_URL}/build", json={"url": f"{os.getcwd()}/temp/repos/1000"})
-assert 201 == response.status_code
-build_id = response.json()['id']
-print(f"build created {build_id}")
-response = requests.get(f"{BUILDY_URL}/build/{build_id}")
-assert 200 == response.status_code
-build = response.json()
+def start_build(repo):
+    response = requests.post(f"{BUILDY_URL}/build", json=repo)
+    assert 201 == response.status_code
+    build_id = response.json()['id']
+    print(f"build created {build_id}")
+    response = requests.get(f"{BUILDY_URL}/build/{build_id}")
+    assert 200 == response.status_code
+    return response.json()
+
+build = start_build({"url": f"{os.getcwd()}/temp/repos/10"})
 print(build)
-assert os.path.exists(f"{buildy_dir}/{build_id}")
-assert os.path.exists(f"{buildy_dir}/{build_id}/build-complete.txt")
+build = start_build({"url": f"{os.getcwd()}/temp/repos/100"})
+print(build)
+build = start_build({"url": f"{os.getcwd()}/temp/repos/1000"})
+print(build)
+assert os.path.exists(f"{buildy_dir}/{build['id']}")
+assert os.path.exists(f"{buildy_dir}/{build['id']}/build-complete.txt")
