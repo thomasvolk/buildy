@@ -83,7 +83,7 @@ class BuildyServer(BaseHTTPRequestHandler):
 
 
 hostName = "localhost"
-serverPort = 8080
+serverPort = 9000
 build_folder = tempfile.mkdtemp("buildy")
 
 if __name__ == "__main__":        
