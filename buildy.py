@@ -51,7 +51,7 @@ class BuildyServer(BaseHTTPRequestHandler):
             self.end_headers()
 
     def _start_build(self, build_setup):
-        self.send_response(200)
+        self.send_response(201)
         self.send_header("Content-type", "application/json")
         self.end_headers()
         build = Build(Repository(build_setup.get("url"), build_setup.get("banch"), build_setup.get("tag"))) 
