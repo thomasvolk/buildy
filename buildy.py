@@ -106,14 +106,25 @@ class BuildyHandler(BaseHTTPRequestHandler):
 if __name__ == "__main__":        
     from optparse import OptionParser
 
-    hostName = "localhost"
-    serverPort = 9000
-    build_folder = tempfile.mkdtemp("buildy")
+    parser = OptionParser()
+    parser.add_option("-p", "--port", dest="port",
+                  help="server port", default="9000")
+    parser.add_option("-H", "--host", dest="host_name",
+                  help="server host name", default="localhost")
+    parser.add_option("-d", "--directory", dest="directory",
+                  help="server directory", default=tempfile.mkdtemp("buildy"))
+
+    (options, args) = parser.parse_args()
+
+    hostName = options.host_name
+    serverPort = int(options.port)
+    build_folder = options.directory
+
     builds = dict()
 
     handler = partial(BuildyHandler, builds, build_folder)
     webServer = HTTPServer((hostName, serverPort), handler)
-    print("Buildy server started http://%s:%s" % (hostName, serverPort))
+    print(f"Buildy server started http://{hostName}:{serverPort} - dir: {build_folder}")
 
     try:
         webServer.serve_forever()
