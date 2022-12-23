@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from subprocess import Popen
 import os
+import time
 
 FILE='./buildy.py'
 
@@ -19,5 +20,6 @@ while True:
     process.kill()
     process.wait()
     process = Popen(cmd, shell=True)
+  time.sleep(0.1)
 
   
