@@ -8,7 +8,8 @@ BUILDY_URL='http://localhost:9000'
 def mk_repo(name, sleep_interval):
     return f"""mkdir -p {os.getcwd()}/temp/repos/{name} &&
 cd {os.getcwd()}/temp/repos/{name} &&
-echo "all:\n\tsleep {sleep_interval}"\n\ttouch build-complete.txt > Makefile &&
+echo "all:\n\tsleep {sleep_interval}\n\ttouch build-complete.txt" > Makefile &&
+touch {name}.txt
 git init && git add --all && git commit -m"init {name}" && 
 git checkout -b qa && 
 touch branch-qa.txt && 
@@ -43,9 +44,9 @@ def start_build(repo):
 
 build = start_build({"url": f"{os.getcwd()}/temp/repos/10"})
 print(build)
-build = start_build({"url": f"{os.getcwd()}/temp/repos/100"})
+build = start_build({"url": f"{os.getcwd()}/temp/repos/100", "branch": "qa"})
 print(build)
-build = start_build({"url": f"{os.getcwd()}/temp/repos/1000"})
+build = start_build({"url": f"{os.getcwd()}/temp/repos/1000", "tag": "v1"})
 print(build)
 assert os.path.exists(f"{buildy_dir}/{build['id']}")
 assert os.path.exists(f"{buildy_dir}/{build['id']}/build-complete.txt")

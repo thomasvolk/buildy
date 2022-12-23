@@ -7,6 +7,7 @@ from dataclasses import dataclass, asdict
 import uuid
 import tempfile
 from functools import partial
+import os
 
 @dataclass
 class Repository:
@@ -15,10 +16,19 @@ class Repository:
     tag: str
 
 class Build:
-    def __init__(self, repo):
+    def __init__(self, dir, repo):
         self.repo = repo 
-        self.__process = Popen('echo "start process $$"; sleep 20; echo "end process $$"', shell=True)
         self.id = str(uuid.uuid4())
+        self.dir = os.path.join(dir, self.id)
+        cmd = f"""cd {self.dir} && git clone {self.repo.url} ."""
+        if self.repo.tag != None:
+            cmd += f" && git checkout {self.repo.tag}"
+        if self.repo.branch != None:
+            cmd += f" && git checkout {self.repo.branch}"
+
+        cmd += " && make"
+        os.makedirs(self.dir)
+        self.__process = Popen(cmd, shell=True)
 
     @property
     def running(self):
@@ -44,7 +54,11 @@ class BuildyHandler(BaseHTTPRequestHandler):
         super().__init__(*args, **kwargs)
 
     def __split_path(self):
-        return self.path[1:].split('/')
+        if self.path.endswith('/'):
+            p = self.path[1:-1]
+        else:
+            p = self.path[1:]
+        return p.split('/')
 
     def do_POST(self):
         path = self.__split_path()
@@ -61,7 +75,9 @@ class BuildyHandler(BaseHTTPRequestHandler):
         self.send_response(201)
         self.send_header("Content-type", "application/json")
         self.end_headers()
-        build = Build(Repository(build_setup.get("url"), build_setup.get("banch"), build_setup.get("tag"))) 
+        build = Build(self.dir,
+          Repository(build_setup.get("url"), build_setup.get("branch"), build_setup.get("tag"))
+        ) 
         self.builds[build.id] = build
         self.wfile.write(bytes(json.dumps({"id": build.id}), "utf-8"))
 
