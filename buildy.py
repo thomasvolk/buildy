@@ -87,11 +87,29 @@ class BuildyHandler(BaseHTTPRequestHandler):
             self.send_response(200)
             self.send_header("Content-type", "text/html")
             self.end_headers()
-            self.wfile.write(bytes("""<html>
+            builds = "".join(
+                [ f"<tr><td>{b.id}</td><td>{b.repo.url}</td><td>{b.running}</td></tr>"
+                  for b in self.builds.values() ]
+            )
+            self.wfile.write(bytes(f"""<html>
             <head>
-            <title>Buildy</title>
+              <title>Buildy</title>
+              <style>
+               th {{
+                 text-align: left;
+               }}
+               td {{
+                 text-align: left;
+               }}
+              </style>
             </head>
-            <body><h1>Buildy</h1></body>
+            <body>
+              <h1>Buildy</h1>
+              <table>
+                <tr><th>id</th><th>url</th><th>running</th></tr>
+                {builds}
+              </table>
+            </body>
             </html>""", "utf-8"))
         elif(path[0] == 'build'):
             if len(path) > 1:
