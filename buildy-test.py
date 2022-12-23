@@ -9,7 +9,16 @@ def mk_repo(name, sleep_interval):
     return f"""mkdir -p {os.getcwd()}/temp/repos/{name} &&
 cd {os.getcwd()}/temp/repos/{name} &&
 echo "all:\n\tsleep {sleep_interval}"\n\ttouch build-complete.txt > Makefile &&
-git init && git add --all && git commit -m"{name}" """
+git init && git add --all && git commit -m"init {name}" && 
+git checkout -b qa && 
+touch branch-qa.txt && 
+git add --all && 
+git commit -m "branch qa" && 
+touch tag-v1.txt && 
+git add --all && 
+git commit -m "tag v1" && 
+git tag v1 && 
+git checkout main """
 
 prepare_tests = f"""rm -rf {os.getcwd()}/temp &&
 mkdir -p {os.getcwd()}/temp/buildy &&
