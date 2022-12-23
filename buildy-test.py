@@ -2,6 +2,7 @@
 import requests
 from subprocess import Popen
 import os
+import time
 
 BUILDY_URL='http://localhost:9000'
 
@@ -42,11 +43,26 @@ def start_build(repo):
     assert 200 == response.status_code
     return response.json()
 
+def file_exists(build, name):
+    path = f"{buildy_dir}/{build['id']}/{name}"
+    count = 0
+    while not os.path.exists(path):
+        time.sleep(0.1)
+        count = count + 1
+        if count > 200:
+            return False
+    return True
+
 build = start_build({"url": f"{os.getcwd()}/temp/repos/10"})
 print(build)
+assert file_exists(build, "build-complete.txt")
+
 build = start_build({"url": f"{os.getcwd()}/temp/repos/100", "branch": "qa"})
 print(build)
+assert file_exists(build, "build-complete.txt")
+assert file_exists(build, "branch-qa.txt")
+
 build = start_build({"url": f"{os.getcwd()}/temp/repos/1000", "tag": "v1"})
 print(build)
-assert os.path.exists(f"{buildy_dir}/{build['id']}")
-assert os.path.exists(f"{buildy_dir}/{build['id']}/build-complete.txt")
+assert file_exists(build, "build-complete.txt")
+assert file_exists(build, "tag-v1.txt")
