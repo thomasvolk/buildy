@@ -19,8 +19,7 @@ git commit -m "branch qa" &&
 touch tag-v1.txt && 
 git add --all && 
 git commit -m "tag v1" && 
-git tag v1 && 
-git checkout main """
+git tag v1 """
 
 prepare_tests = f"""rm -rf {os.getcwd()}/temp &&
 mkdir -p {os.getcwd()}/temp/buildy &&
