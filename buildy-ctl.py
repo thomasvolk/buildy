@@ -7,9 +7,9 @@ FILE='./buildy.py'
 
 dir = 'temp/buildy'
 os.makedirs(dir, exist_ok=True)
-cmd = f"{FILE} -d {dir}"
+cmd = [FILE, "-d", dir]
 
-process = Popen(cmd, shell=True)
+process = Popen(cmd)
 
 current = os.path.getmtime(FILE)
 
@@ -19,7 +19,7 @@ while True:
     current = mtime
     process.terminate()
     process.wait()
-    process = Popen(cmd, shell=True)
+    process = Popen(cmd)
   time.sleep(0.1)
 
   
