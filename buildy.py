@@ -97,6 +97,9 @@ class BuildyHandler(BaseHTTPRequestHandler):
             <head>
               <title>Buildy</title>
               <style>
+               table {{
+                width: 100%;
+               }}
                th {{
                  text-align: left;
                }}
