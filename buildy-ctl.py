@@ -17,7 +17,7 @@ while True:
   mtime = os.path.getmtime(FILE)
   if mtime != current:
     current = mtime
-    process.kill()
+    process.terminate()
     process.wait()
     process = Popen(cmd, shell=True)
   time.sleep(0.1)
