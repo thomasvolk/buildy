@@ -21,7 +21,7 @@ class Build:
         self.repo = repo 
         self.id = str(uuid.uuid4())
         self.dir = os.path.join(dir, self.id)
-        cmd = f"""cd {self.dir} && git clone {self.repo.url} ."""
+        cmd = f"""cd {self.dir} && git clone {self.repo.url} repo && cd repo"""
         if self.repo.tag != None:
             cmd += f" && git checkout {self.repo.tag}"
         if self.repo.branch != None:

@@ -42,10 +42,10 @@ def start_build(repo):
     assert 200 == response.status_code
     return response.json()
 
-def file_exists(build, name):
-    path = f"{buildy_dir}/{build['id']}/{name}"
+def file_exists(build, path):
+    abs_path = f"{buildy_dir}/{build['id']}/{path}"
     count = 0
-    while not os.path.exists(path):
+    while not os.path.exists(abs_path):
         time.sleep(0.1)
         count = count + 1
         if count > 200:
@@ -54,14 +54,14 @@ def file_exists(build, name):
 
 build = start_build({"url": f"{os.getcwd()}/temp/repos/10"})
 print(build)
-assert file_exists(build, "build-complete.txt")
+assert file_exists(build, "repo/build-complete.txt")
 
 build = start_build({"url": f"{os.getcwd()}/temp/repos/100", "branch": "qa"})
 print(build)
-assert file_exists(build, "build-complete.txt")
-assert file_exists(build, "branch-qa.txt")
+assert file_exists(build, "repo/build-complete.txt")
+assert file_exists(build, "repo/branch-qa.txt")
 
 build = start_build({"url": f"{os.getcwd()}/temp/repos/1000", "tag": "v1"})
 print(build)
-assert file_exists(build, "build-complete.txt")
-assert file_exists(build, "tag-v1.txt")
+assert file_exists(build, "repo/build-complete.txt")
+assert file_exists(build, "repo/tag-v1.txt")
