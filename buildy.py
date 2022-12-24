@@ -8,6 +8,7 @@ import uuid
 import tempfile
 from functools import partial
 import os
+import datetime
 
 @dataclass
 class Repository:
@@ -29,6 +30,7 @@ class Build:
         cmd += " && make"
         os.makedirs(self.dir)
         self.__process = Popen(cmd, shell=True)
+        self.creation_time = datetime.datetime.now()
 
     @property
     def running(self):
@@ -88,7 +90,7 @@ class BuildyHandler(BaseHTTPRequestHandler):
             self.send_header("Content-type", "text/html")
             self.end_headers()
             builds = "".join(
-                [ f"<tr><td>{b.id}</td><td>{b.repo.url}</td><td>{b.running}</td></tr>"
+                [ f"<tr><td>{b.id}</td><td>{b.repo.url}</td><td>{b.creation_time}</td><td>{b.running}</td></tr>"
                   for b in self.builds.values() ]
             )
             self.wfile.write(bytes(f"""<html>
@@ -101,12 +103,16 @@ class BuildyHandler(BaseHTTPRequestHandler):
                td {{
                  text-align: left;
                }}
+               body {{
+                 font-family: "Source Code Pro", monospace;
+                 font-size: 14pt;
+               }}
               </style>
             </head>
             <body>
               <h1>Buildy</h1>
               <table>
-                <tr><th>id</th><th>url</th><th>running</th></tr>
+                <tr><th>id</th><th>url</th><th>created</th><th>running</th></tr>
                 {builds}
               </table>
             </body>
