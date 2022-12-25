@@ -4,6 +4,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from subprocess import Popen
 import json
 from dataclasses import dataclass, asdict
+import threading
 import uuid
 import tempfile
 from functools import partial
@@ -48,6 +49,31 @@ class Build:
     @property
     def json(self):
         return json.dumps(self.dict)
+
+
+class BuildManager:
+    def __init__(self):
+        self.__builds = dict()
+        self.__sem = threading.Semaphore()
+
+    def __getitem__(self, key):
+        return self.__builds[key]
+
+    def __setitem__(self, key, value):
+        self.__sem.acquire()
+        self.cleanup()
+        self.__builds[key] = value
+        self.__sem.release()
+
+    def get(self, key):
+        return self.__builds.get(key)
+
+    def values(self):
+        return self.__builds.values()
+
+    def cleanup(self):
+        self.__builds = { id: build for id, build in self.__builds.items() if build.running}
+
 
 class BuildyHandler(BaseHTTPRequestHandler):
     def __init__(self, builds, dir, *args, **kwargs):
@@ -163,7 +189,7 @@ if __name__ == "__main__":
     serverPort = int(options.port)
     build_folder = options.directory
 
-    builds = dict()
+    builds = BuildManager()
 
     handler = partial(BuildyHandler, builds, build_folder)
     webServer = HTTPServer((hostName, serverPort), handler)
