@@ -7,7 +7,7 @@ FILE='./buildy.py'
 
 dir = 'temp/buildy'
 os.makedirs(dir, exist_ok=True)
-cmd = [FILE, "-d", dir]
+cmd = [FILE, "-d", dir, "--log-level", "DEBUG"]
 
 process = Popen(cmd)
 
