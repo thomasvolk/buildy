@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+__VERSION__ = '0.1'
+
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from subprocess import Popen
 import json
@@ -10,6 +12,7 @@ import tempfile
 from functools import partial
 import os
 import datetime
+import logging
 
 @dataclass
 class Repository:
@@ -121,7 +124,7 @@ class BuildyHandler(BaseHTTPRequestHandler):
             )
             self.wfile.write(bytes(f"""<html>
             <head>
-              <title>Buildy</title>
+              <title>Buildy v{__VERSION__}</title>
               <style>
                table {{
                 width: 100%;
@@ -182,8 +185,15 @@ if __name__ == "__main__":
                   help="server host name", default="localhost")
     parser.add_option("-d", "--directory", dest="directory",
                   help="server directory", default=tempfile.mkdtemp("buildy"))
+    parser.add_option("--log-level", dest="loglevel",
+                  help="loglevel", default="INFO")
 
     (options, args) = parser.parse_args()
+
+    logging.basicConfig(
+        format='%(asctime)s %(message)s', 
+        level=getattr(logging, options.loglevel.upper())
+        )
 
     hostName = options.host_name
     serverPort = int(options.port)
@@ -193,7 +203,7 @@ if __name__ == "__main__":
 
     handler = partial(BuildyHandler, builds, build_folder)
     webServer = HTTPServer((hostName, serverPort), handler)
-    print(f"Buildy server started http://{hostName}:{serverPort} - dir: {build_folder}")
+    logging.info(f"Buildy server v{__VERSION__} started http://{hostName}:{serverPort} - dir: {build_folder}")
 
     try:
         webServer.serve_forever()
@@ -201,4 +211,4 @@ if __name__ == "__main__":
         pass
     finally:
         webServer.server_close()
-        print("Buildy server stopped")
+        logging.info("Buildy server stopped")
