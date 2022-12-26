@@ -6,10 +6,13 @@ import time
 
 BUILDY_URL='http://localhost:9000'
 
-def mk_repo(name, sleep_interval):
+def mk_repo(name, sleep_interval, fail=False):
+    fail_command = ""
+    if fail:
+        fail_command = "\n\texit 1"
     return f"""mkdir -p {os.getcwd()}/temp/repos/{name} &&
 cd {os.getcwd()}/temp/repos/{name} &&
-echo "all:\n\tsleep {sleep_interval}\n\ttouch build-complete.txt" > Makefile &&
+echo "all:\n\tsleep {sleep_interval}\n\ttouch build-complete.txt{fail_command}" > Makefile &&
 touch {name}.txt
 git init && git add --all && git commit -m"init {name}" && 
 git checkout -b qa && 
@@ -24,8 +27,9 @@ git tag v1 """
 prepare_tests = f"""rm -rf {os.getcwd()}/temp &&
 mkdir -p {os.getcwd()}/temp/buildy &&
 {mk_repo(10, 0.01)} &&
-{mk_repo(100, 0.1)} &&
-{mk_repo(1000, 1)}"""
+{mk_repo(100, 0.1, fail=True)} &&
+{mk_repo(1000, 1)} &&
+{mk_repo(4000, 4)}"""
 
 process = Popen(prepare_tests, shell=True)
 assert 0 == process.wait()
@@ -65,3 +69,7 @@ build = start_build({"url": f"{os.getcwd()}/temp/repos/1000", "tag": "v1"})
 print(build)
 assert file_exists(build, "repo/build-complete.txt")
 assert file_exists(build, "repo/tag-v1.txt")
+
+build = start_build({"url": f"{os.getcwd()}/temp/repos/4000"})
+print(build)
+assert file_exists(build, "repo/build-complete.txt")

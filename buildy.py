@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-__VERSION__ = '0.1'
+__VERSION__ = '0.2'
 
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from subprocess import Popen
@@ -13,6 +13,15 @@ from functools import partial
 import os
 import datetime
 import logging
+from enum import Enum
+
+class Status(Enum):
+    RUNNING = "running"
+    SUCCESS = "success"
+    FAILURE = "failure"
+
+    def __str__(self):
+        return self.name
 
 @dataclass
 class Repository:
@@ -48,17 +57,20 @@ class Build:
         self.creation_time = datetime.datetime.now()
 
     @property
-    def running(self):
-        running = self.__process.poll() == None
-        if not running:
-            self.__log.close()
-        return running
+    def status(self):
+        result = self.__process.poll()
+        if result == None:
+            return Status.RUNNING
+        elif result == 0:
+            return Status.SUCCESS
+        else:
+            return Status.FAILURE
 
     @property
     def dict(self):
         return {
                 "id": self.id,
-                "running": self.running,
+                "status": str(self.status),
                 "repository": asdict(self.repo)
             }
 
@@ -71,10 +83,11 @@ class Build:
             return log.read()
 
 
-class BuildManager:
-    def __init__(self):
+class BuildCache:
+    def __init__(self, max_size):
         self.__cache = dict()
         self.__sem = threading.Semaphore()
+        self.__max_size = max_size
 
     def __getitem__(self, key):
         return self.__cache[key]
@@ -89,11 +102,26 @@ class BuildManager:
         return self.__cache.get(key)
 
     def values(self):
-        return self.__cache.values()
+        return [ i[1] for i in self.__cache_items_sorted() ]
+
+    def __cache_items_sorted(self):
+        return sorted(
+                        sorted(self.__cache.items(), 
+                               key=lambda i: i[1].creation_time, 
+                               reverse=True),
+                        key=lambda i: i[1].status == Status.RUNNING,
+                        reverse=True
+                     )
+
+    def __builds_running(self):
+        return len([ b for b in self.__cache.values() if b.status == Status.RUNNING])
 
     def cleanup(self):
-        logging.info(f"cleanup build cache")
-        self.__cache = { id: build for id, build in self.__cache.items() if build.running}
+        running = self.__builds_running()
+        total = len(self.__cache)
+        if running <= self.__max_size and total > self.__max_size:
+            logging.info(f"cleanup build cache (total={total}, running={running})")
+            self.__cache = { id: build for id, build in self.__cache_items_sorted()[0:(self.__max_size-1)] }
 
 
 class BuildyHandler(BaseHTTPRequestHandler):
@@ -125,7 +153,7 @@ class BuildyHandler(BaseHTTPRequestHandler):
         self.send_header("Content-type", "text/html")
         self.end_headers()
         builds = "".join(
-                [ f"""<tr><td><a href="/build/{b.id}/log">{b.id}</a></td><td>{b.repo}</td><td>{b.creation_time}</td><td>{b.running}</td></tr>"""
+                [ f"""<tr><td><a href="/build/{b.id}/log">{b.id}</a></td><td>{b.repo}</td><td>{b.creation_time}</td><td>{b.status}</td></tr>"""
                   for b in self.builds.values() ]
         )
         self.wfile.write(bytes(f"""<html>
@@ -150,7 +178,7 @@ class BuildyHandler(BaseHTTPRequestHandler):
           <body>
             <h1>Buildy v{__VERSION__}</h1>
             <table>
-              <tr><th>id</th><th>repository</th><th>created</th><th>running</th></tr>
+              <tr><th>id</th><th>repository</th><th>created</th><th>status</th></tr>
               {builds}
             </table>
           </body>
@@ -218,6 +246,8 @@ if __name__ == "__main__":
                   help="server host name", default="localhost")
     parser.add_option("-d", "--directory", dest="directory",
                   help="server directory", default=tempfile.mkdtemp("buildy"))
+    parser.add_option("-c", "--cache-size", dest="cache_size",
+                  help="max cache size", default="20")
     parser.add_option("--log-level", dest="loglevel",
                   help="loglevel", default="INFO")
 
@@ -232,7 +262,7 @@ if __name__ == "__main__":
     serverPort = int(options.port)
     build_folder = options.directory
 
-    builds = BuildManager()
+    builds = BuildCache(int(options.cache_size))
 
     handler = partial(BuildyHandler, builds, build_folder)
     webServer = HTTPServer((hostName, serverPort), handler)
