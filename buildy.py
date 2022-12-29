@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-__VERSION__ = '0.2'
+__VERSION__ = '0.2.1'
 
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from subprocess import Popen
@@ -153,7 +153,7 @@ class BuildyHandler(BaseHTTPRequestHandler):
         self.send_header("Content-type", "text/html")
         self.end_headers()
         builds = "".join(
-                [ f"""<tr><td><a href="/build/{b.id}/log">{b.id}</a></td><td>{b.repo}</td><td>{b.creation_time}</td><td>{b.status}</td></tr>"""
+                [ f"""<tr><td><a href="build/{b.id}/log">{b.id}</a></td><td>{b.repo}</td><td>{b.creation_time}</td><td>{b.status}</td></tr>"""
                   for b in self.builds.values() ]
         )
         self.wfile.write(bytes(f"""<html>
