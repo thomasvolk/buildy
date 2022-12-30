@@ -7,6 +7,8 @@ Buildy is a simple build server that can be managed via REST api. It can clone a
 Simple start the buildy.py script:
 
     ./buildy.py
+    
+By default buildy listen to the port 9000 - http://localhost:9000/
 
 You need python3 to run Buildy.
 
