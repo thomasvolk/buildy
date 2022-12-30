@@ -16,6 +16,18 @@ Use the help option to see all programm parameters:
 
     ./buildy.py --help
 
+## develop
+
+To avoid restardind the server again and again during the development you can run the server managed by the buildy control script:
+
+    ./buildy-ctl.py
+    
+This script restarts the server any time the file build.py was changed.
+
+To script buildy-test.py is for testing and generating test data. After every restart the cache of buildy is empty. Run the tests to have test data:
+
+    ./buildy-test.py
+
 ## Use
 
 Before you start: Buildy only works with git and will try to build your repository by simply executing make. So your repository must have a Makefile in the project root directory which includes the target "all". Here is an example:
