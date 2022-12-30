@@ -2,6 +2,20 @@
 
 Buildy is a simple build server that can be managed via REST api. It can clone and git repositories and build them via make.
 
+## Run
+
+Simple start the buildy.py script:
+
+    ./buildy.py
+
+You need python3 to run Buildy.
+
+Use the help option to see all programm parameters:
+
+    ./buildy.py --help
+
+## Help
+
 Before you start: Buildy only works with git and will try to build your repository by simply executing make. So your repository must have a Makefile in the project root directory which includes the target "all". Here is an example:
 
     mkkdir myrepo
@@ -10,7 +24,7 @@ Before you start: Buildy only works with git and will try to build your reposito
     git init
     git add --all
     git commit -m"init"
-    
+
 Start a build:
 
     curl -X POST http://localhost:9000/build -d '{"url": URL_TO_YOUR_REPOSITORY, "branch": OPTIONAL, "tag": OPTIONAL }'
