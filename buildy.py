@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-__VERSION__ = '0.2.1'
+__VERSION__ = '0.2.2'
 
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from subprocess import Popen
@@ -169,7 +169,14 @@ class BuildyHandler(BaseHTTPRequestHandler):
           td {{
             text-align: left;
           }}
+          .code {{
+            background: #eee;
+            padding: 10px;
+            font-size: 11pt;
+          }}
           body {{
+            background: #fff;
+            color: #000;
             font-family: "Source Code Pro", monospace;
             font-size: 14pt;
             }}
@@ -177,10 +184,55 @@ class BuildyHandler(BaseHTTPRequestHandler):
         </head>
           <body>
             <h1>Buildy v{__VERSION__}</h1>
+            Buildy is a simple build server that can be managed via REST api. 
+            It can clone and git repositories and build them via make.
+            <h2>Current Builds</h2>
             <table>
               <tr><th>id</th><th>repository</th><th>created</th><th>status</th></tr>
               {builds}
             </table>
+            <h2>Help</h2>
+              Before you start: Buildy only works with git and will try to build your repository by
+              simply executing make.
+              So your repository must have a <strong>Makefile</strong> in the project root directory 
+              which includes the target "all". Here is an example:
+              <p class="code">
+                mkkdir myrepo <br/>
+                cd myrepo <br/>
+                echo "all:\n\ttouch build-complete.txt" > Makefile <br/>
+                git init <br/>
+                git add --all <br/>
+                git commit -m"init"
+              </p>
+              <h3>Start a build:</h3>
+              <p class="code">
+                  curl -X POST http://localhost:9000/build
+                  -d '{{"url": URL_TO_YOUR_REPOSITORY, "branch": OPTIONAL, "tag": OPTIONAL }}'
+              </p>
+              This call returns a jsob object with the build id:
+              <p class="code">{{"id": "e8006c1d-5f7c-4edf-8c23-79974d02c909"}}</p>
+              <h3>Retrieve build details:</h3>
+              <p class="code">
+                curl http://localhost:9000/build/BUILD_ID
+              </p>
+              This call returns a json object with the build details:
+              <p class="code">
+              {{
+                "id": BUILD_ID,
+                "status": "RUNNING|SUCCESS|FAILURE", "repository": 
+                {{"url": URL_TO_YOUR_REPOSITORY, "branch": null|BRANCH, "tag": null|TAG}}
+              }}
+              </p>
+              <h3>Retrieve build log:</h3>
+              <p class="code">
+                curl http://localhost:9000/build/BUILD_ID/log
+              </p>
+              This call returns a the build log in text format.
+              <p class="code">
+                Cloning into 'repo'... <br/>
+                done. <br/>
+                ...
+              </p>
           </body>
         </html>""", "utf-8"))
 
