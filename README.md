@@ -14,7 +14,7 @@ Use the help option to see all programm parameters:
 
     ./buildy.py --help
 
-## Help
+## Use
 
 Before you start: Buildy only works with git and will try to build your repository by simply executing make. So your repository must have a Makefile in the project root directory which includes the target "all". Here is an example:
 
