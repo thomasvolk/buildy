@@ -14,6 +14,8 @@ import os
 import datetime
 import logging
 from enum import Enum
+from os import listdir
+from os.path import isdir, join
 
 class Status(Enum):
     RUNNING = "running"
@@ -100,6 +102,9 @@ class BuildCache:
 
     def get(self, key):
         return self.__cache.get(key)
+
+    def keys(self):
+        return self.__cache.keys()
 
     def values(self):
         return [ i[1] for i in self.__cache_items_sorted() ]
@@ -248,6 +253,16 @@ class BuildyHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(bytes(build.log(), "utf-8"))
 
+    def __send_build_history(self):
+        history_keys = [ {'key': k }
+                         for k in listdir(self.dir) 
+                         if isdir(join(self.dir, k)) and not k in self.builds.keys()
+                       ]
+        self.send_response(200)
+        self.send_header("Content-type", "application/json")
+        self.end_headers()
+        self.wfile.write(bytes(json.dumps(history_keys), "utf-8"))
+
     def do_POST(self):
         path = self.__split_path()
         if(path == ['build']):
@@ -284,6 +299,8 @@ class BuildyHandler(BaseHTTPRequestHandler):
                 self.send_header("Content-type", "application/json")
                 self.end_headers()
                 self.wfile.write(bytes(json.dumps([b.dict for b in self.builds.values()]), "utf-8"))
+        elif(path[0] == 'history'):
+            self.__send_build_history()
         else:
             self.__send_not_found()
 
